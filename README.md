@@ -9,7 +9,7 @@ Libraries/Packeges needed to run on OS X: Kivy, Python 2.7 (should be compatible
 
 Instructions:
       Dowload all files (besides README file) into one directory. 
-      run HockeyStatsApp.py in kivy environment (ex. in terminal, type "kivy HockeyStatsApp")
+      run Main.py in kivy environment (ex. in terminal, type "kivy Main.py")
 
 Authors:
 Pierce Cunneen
