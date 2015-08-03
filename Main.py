@@ -10,6 +10,7 @@ from kivy.uix.dropdown import DropDown
 from kivy.uix.label import Label
 from kivy.uix.image import Image 
 from kivy.core.window import Window
+
 import webbrowser
 
 from WebScrappingTeamAdvancedStats import GetTeamAdvancedStats
@@ -18,6 +19,7 @@ from PlayerSearch import GetPlayers, PlayerSearch
 from IndividualPlayerPagesSearch import GetPlayerStats
 from TeamSearch import TeamSearch, GetTeams
 
+# Gets Some intial player and team data that will be used throughout app
 PlayerData = GetPlayers()
 Teams = GetTeams()
 
@@ -34,6 +36,7 @@ class HockeyApp(App):
         parent1 = FloatLayout()
         parent = FloatLayout()
         BackgroundImage = Image(source = 'background_ice.jpg', size_hint= (1, 1), pos_hint={'x':0 , 'center_y' : .5}, allow_stretch = True, keep_ratio = False)
+        
         # Beginning of Team Stats Section
         def GoToTeamStats(obj):
             parent1.clear_widgets()
@@ -41,49 +44,41 @@ class HockeyApp(App):
             Layout = GridLayout(cols = 26, rows = 31, size_hint = (None, None))
             Layout.bind(minimum_height=Layout.setter('height'), minimum_width = Layout.setter('width'))
             # Button Functions
-            def GetStats(obj):
-                # Updates the Grid Layout with the new categories
-                SortBy = 0
-                
             
-                
-                do_update = True
-                if b3.text == 'Situation' and b2.text != 'Season':
-                    Stats, Categories = GetTeamAdvancedStats(seasons[b2.text],'5v5')
-
+            def GetStats(obj, SortBy = 'Team'):
+                # Updates the Grid Layout with the new categories
+                if b3.text == 'Situation':
                     b3.text = '5v5'
-                    Layout.clear_widgets()
-                elif b3.text == 'Situation' and b2.text == 'Season':
-                    do_update = False
-                elif b3.text != 'Situation' and b2.text == 'Season':
-                    Stats,Categories = GetTeamAdvancedStats('201415', situations[b3.text])
-                    b2.text = '2014-15'
-                    Layout.clear_widgets()
-                    
-                else:
-                    Stats,Categories = GetTeamAdvancedStats(seasons[b2.text], situations[b3.text])
-                    Layout.clear_widgets()
-                
-                
-                if do_update:
-                    for category in Categories:
-                        Layout.add_widget(TextInput(text= str(category), size_hint = (None, None), font_size = 20, background_color = [1, 1, 1, 1]))
-                    for id_num in range(1, 31):
-                        if id_num % 2 != 0:
-                            ColorBackGround = [200./255, 204./255, 255./255, 1]
-                        else:
-                            ColorBackGround = [1,1,1,1]
-                        for stat in Stats:
-                            Layout.add_widget(TextInput(text= str(stat[id_num]), size_hint = (None, None), font_size = 16, background_color = ColorBackGround))
+                if b2.text == 'Season':
+                    b2.text = '2014-2015'
+                Stats,Categories = GetTeamAdvancedStats(seasons[b2.text], situations[b3.text])
+                Layout.clear_widgets()
 
+                for category in Categories:
+                    Category_Button = Button(text = category, size_hint = (None, None), background_color = [1,0,0,])
+                    Category_Button.bind(on_release = SortByStat)
+                    Layout.add_widget(Category_Button)
+                if SortBy == 'Team':
+                    ordered_keys = range(1,31)
+                else:
+                    index = Categories.index(SortBy)
+                    ordered_keys = Sort(Stats[index])
+                count = 0
+                for id_num in ordered_keys:
+                    count += 1
+                    if count % 2 != 0:
+                        ColorBackGround = [200./255, 204./255, 255./255, 1]
+                    else:
+                        ColorBackGround = [1,1,1,1]
+                    for stat in Stats:
+                        Layout.add_widget(TextInput(text= str(stat[id_num]), size_hint = (None, None), font_size = 16, background_color = ColorBackGround, readonly = True))
+                            #parent1.add_widget(Label(text = 'Sort by touching first row of a column', size_hint = (1, .1), pos_hint = {'center_x':.5, 'y':.8}, color = [0,0,0,1], font = 60))
+                
                 # Allows for drop down menus to be accessed again after Layout has been updates
                 b2.bind(on_release=dropdown1.open)
                 b3.bind(on_release=dropdown2.open)
-            def on_double_tap():
-                SortBy = Stats.index(TextInput.selection_text)
-                print 'fds'
-                print SortBy
-            
+            def SortByStat(obj):
+                GetStats(1, obj.text)
             def BackToMenu(obj):
                 parent1.clear_widgets()
                 Layout.clear_widgets()
@@ -110,6 +105,9 @@ class HockeyApp(App):
             dropdown2.bind(on_select=lambda instance, x: setattr(b3, 'text', x))
             
             
+            
+    
+
             b1 = Button(text = 'Back to Menu', pos_hint={'x': 0, 'center_y': .95}, size_hint=(.25, .1))
             b4 = Button(text = 'Get Stats', pos_hint={'x': .75, 'center_y': .95},size_hint = (.25, .1))
             
@@ -191,7 +189,7 @@ class HockeyApp(App):
                     Grid = GridLayout(rows = len(Individual_stats_5v5) + 1, cols = len(Individual_categories), size_hint = (None, None))
                     Grid.bind(minimum_height=Grid.setter('height'), minimum_width = Grid.setter('width'))
                     for stat_category in Individual_categories:
-                        Grid.add_widget(TextInput(text = str(stat_category), size_hint = (None, None), font_size = 18))
+                        Grid.add_widget(TextInput(text = str(stat_category), size_hint = (None, None), font_size = 18, readonly = True))
                     for i in range(len(Individual_stats_5v5)):
                         if i % 2 == 0:
                             ColorBackGround = [200./255, 204./255, 255./255, 1]
@@ -199,7 +197,7 @@ class HockeyApp(App):
                             ColorBackGround = [1,1,1,1]
                         season = Individual_stats_5v5[i]
                         for stat in season:
-                            Grid.add_widget(TextInput(text = str(stat), size_hint = (None, None), font_size = 18, background_color = ColorBackGround))
+                            Grid.add_widget(TextInput(text = str(stat), size_hint = (None, None), font_size = 18, background_color = ColorBackGround, readonly = True))
                     Scroll = ScrollView(size_hint = (1, .65))
 
                     Scroll.add_widget(Grid)
@@ -215,7 +213,7 @@ class HockeyApp(App):
                     Grid = GridLayout(rows = len(On_ice_Goal_stats) + 1, cols = len(On_ice_Goal_categories), size_hint = (None, None))
                     Grid.bind(minimum_height=Grid.setter('height'), minimum_width = Grid.setter('width'))
                     for stat_category in On_ice_Goal_categories:
-                        Grid.add_widget(TextInput(text = str(stat_category), size_hint = (None, None), font_size = 18))
+                        Grid.add_widget(TextInput(text = str(stat_category), size_hint = (None, None), font_size = 18, readonly = True))
                     for i in range(len(On_ice_Goal_stats)):
                         if i % 2 == 0:
                             ColorBackGround = [200./255, 204./255, 255./255, 1]
@@ -223,7 +221,7 @@ class HockeyApp(App):
                             ColorBackGround = [1,1,1,1]
                         season = On_ice_Goal_stats[i]
                         for stat in season:
-                            Grid.add_widget(TextInput(text = str(stat), size_hint = (None, None), font_size = 18, background_color = ColorBackGround))
+                            Grid.add_widget(TextInput(text = str(stat), size_hint = (None, None), font_size = 18, background_color = ColorBackGround, readonly = True))
                     Scroll = ScrollView(size_hint = (1, .65))
                     Scroll.add_widget(Grid)
                     Layout.add_widget(Scroll)
@@ -240,7 +238,7 @@ class HockeyApp(App):
                     Grid = GridLayout(rows = len(On_ice_Fenwick_stats) + 1, cols = len(On_ice_Fenwick_categories), size_hint = (None, None))
                     Grid.bind(minimum_height=Grid.setter('height'), minimum_width = Grid.setter('width'))
                     for stat_category in On_ice_Fenwick_categories:
-                        Grid.add_widget(TextInput(text = str(stat_category), size_hint = (None, None), font_size = 18))
+                        Grid.add_widget(TextInput(text = str(stat_category), size_hint = (None, None), font_size = 18, readonly = True))
                     for i in range(len(On_ice_Fenwick_stats)):
                         if i % 2 == 0:
                             ColorBackGround = [200./255, 204./255, 255./255, 1]
@@ -248,7 +246,7 @@ class HockeyApp(App):
                             ColorBackGround = [1,1,1,1]
                         season = On_ice_Fenwick_stats[i]
                         for stat in season:
-                            Grid.add_widget(TextInput(text = str(stat), size_hint = (None, None), font_size = 18, background_color = ColorBackGround))
+                            Grid.add_widget(TextInput(text = str(stat), size_hint = (None, None), font_size = 18, background_color = ColorBackGround, readonly = True))
                     Scroll = ScrollView(size_hint = (1, .65))
                     
                     Scroll.add_widget(Grid)
@@ -268,7 +266,7 @@ class HockeyApp(App):
                     Layout.clear_widgets()
                     Layout.add_widget(PlayerSearchLabel)
                     
-                    def TeamSearchDisplayPlayerData(obj):
+                    def TeamSearchDisplayPlayerData(obj, SortBy = 0):
                         
                         Layout.clear_widgets()
                         Layout.add_widget(PlayerSearchLabel)
@@ -294,39 +292,61 @@ class HockeyApp(App):
                         
                         if SelectStatsReport.text == 'Individual':
                             Stats, Categories = GetPlayerIndividualStats(seasons[SelectSeason.text],situations[SelectSituation.text] , str(Teams[SearchResults.text]), Positions[SelectPosition.text], SelectMinutes.text)
-                            print Stats[5]
-                            print Sort(Stats[5])
+            
                             Grid = GridLayout(rows = len(Stats[0]) + 1, cols = len(Stats), size_hint = (None, None))
                         
                             Grid.bind(minimum_height=Grid.setter('height'), minimum_width = Grid.setter('width'))
-                        
+                            if SortBy == 0:
+                                ordered_keys = range(1, len(Stats[0]) + 1)
+                            else:
+                                index = Categories.index(SortBy)
+                                ordered_keys = Sort(Stats[index])
                             for stat_category in Categories:
-                                Grid.add_widget(TextInput(text = stat_category, size_hint = (None, None), font_size = 18))
-                            for i in range(1, len(Stats[0]) + 1):
-                                if i % 2 != 0:
+                                Category_Button = Button(text = stat_category, size_hint = (None, None), background_color = [1,0,0,], font_size = 18)
+                                Category_Button.bind(on_release = SortByStat)
+                                Grid.add_widget(Category_Button)
+                            count = 0
+                            for i in ordered_keys:
+                                count += 1
+                                if count % 2 != 0:
                                     ColorBackGround = [200./255, 204./255, 255./255, 1]
                                 else:
                                     ColorBackGround = [1,1,1,1]
                             
                                 for stat in Stats:
-                                    Grid.add_widget(TextInput(text = str(stat[i]), size_hint = (None, None), font_size = 18, background_color = ColorBackGround))
+                                    Grid.add_widget(TextInput(text = str(stat[i]), size_hint = (None, None), font_size = 18, background_color = ColorBackGround, readonly = True))
                         else:
                             Stats, Categories = GetPlayerOnIceStats(seasons[SelectSeason.text],situations[SelectSituation.text] , str(Teams[SearchResults.text]), Positions[SelectPosition.text], SelectMinutes.text, SelectStatsReport.text.lower())
                             Grid = GridLayout(rows = len(Stats) + 1, cols = len(Categories), size_hint = (None, None), spacing = [.1, .1])
                             
                             Grid.bind(minimum_height=Grid.setter('height'), minimum_width = Grid.setter('width'))
                             
+                            if SortBy == 0:
+                                ordered_keys = range(1, len(Stats) + 1)
+                            else:
+                                index = Categories.index(SortBy)
+                                ordered_keys = Sort(Stats[index])
+                
                             for stat_category in Categories:
-                                Grid.add_widget(TextInput(text = stat_category, size_hint = (None, None), font_size = 18))
-                            for i in range(1, len(Stats) + 1):
-                                if i % 2 != 0:
+                                    Category_Button = Button(text = stat_category, size_hint = (None, None), background_color = [1,0,0,],font_size = 18)
+                                    Category_Button.bind(on_release = SortByStat)
+                                    Grid.add_widget(Category_Button)
+                            count = 0
+                            for i in ordered_keys:
+                                count += 1
+                                if count % 2 != 0:
                                     ColorBackGround = [200./255, 204./255, 255./255, 1]
                                 else:
                                     ColorBackGround = [1,1,1,1]
                                 
                                 for player in Stats[i-1]:
-                                    Grid.add_widget(TextInput(text = player, size_hint = (None, None), font_size = 18, background_color = ColorBackGround))
-                            
+                                    Grid.add_widget(TextInput(text = player, size_hint = (None, None), font_size = 18, background_color = ColorBackGround, readonly = True))
+                    
+                    
+                    
+                    
+                    
+                    
                         # re bind drop down menus
                         SelectPosition.bind(on_release = position_dropdown.open)
                         SelectSeason.bind(on_release = Season_dropdown.open)
@@ -338,8 +358,12 @@ class HockeyApp(App):
                         Scroll.add_widget(Grid)
                         Layout.add_widget(Scroll)
                         
-
-                    BackToPlayerSearch = Button(text='Back to Player Search', size_hint = (.5, .1), pos_hint = {'x':.0, 'center_y':.95})
+                    
+                    def SortByStat(obj):
+                        TeamSearchDisplayPlayerData(1,obj.text)
+                    
+                    
+                    BackToPlayerSearch = Button(text='Back to Player Search', size_hint = (.5, .1), pos_hint = {'x':0, 'center_y':.95})
                     
                     GetStatsButton = Button(text='Get Stats', size_hint = (.5, .1), pos_hint = {'x':.5, 'center_y':.95})
                     GetStatsButton.bind(on_release = TeamSearchDisplayPlayerData)
@@ -378,6 +402,8 @@ class HockeyApp(App):
                     StatsReport_dropdown = DropDownCreation(StatReports)
                     SelectStatsReport.bind(on_release = StatsReport_dropdown.open)
                     StatsReport_dropdown.bind(on_select = lambda instace, x: setattr(SelectStatsReport, 'text', x))
+                    
+                    
                 
                     
                     
@@ -397,11 +423,11 @@ class HockeyApp(App):
                     Layout.clear_widgets()
                     Layout.add_widget(PlayerSearchLabel)
                     
-                    IndividualButton = Button(text='Individual Stats 5v5', size_hint= (.25, .1), pos_hint = {'x':0, 'center_y':.95})
-                    On_Ice_Goals_Button = Button(text='On Ice Goals Stats 5v5', size_hint= (.25, .1), pos_hint = {'x':.25, 'center_y':.95})
-                    On_Ice_Fenwick_Button = Button(text='On Ice Fenwick Stats 5v5', size_hint= (.25, .1), pos_hint = {'x':.5, 'center_y':.95})
+                    IndividualButton = Button(text='Individual Stats 5v5', size_hint= (.25, .1), pos_hint = {'x':.25, 'center_y':.95})
+                    On_Ice_Goals_Button = Button(text='On Ice Goals Stats 5v5', size_hint= (.25, .1), pos_hint = {'x':.5, 'center_y':.95})
+                    On_Ice_Fenwick_Button = Button(text='On Ice Fenwick Stats 5v5', size_hint= (.25, .1), pos_hint = {'x':.75, 'center_y':.95})
             
-                    BackToPlayerSearch = Button(text='Back to Player Search', size_hint = (.25, .1), pos_hint = {'x':.75, 'center_y':.95})
+                    BackToPlayerSearch = Button(text='Back to Player Search', size_hint = (.25, .1), pos_hint = {'x':0, 'center_y':.95})
                     BackToPlayerSearch.bind(on_release = BackToSearch)
                     IndividualButton.bind(on_release = IndividualStats)
                     On_Ice_Goals_Button.bind(on_release = OnIceGoalsStats)
@@ -424,12 +450,15 @@ class HockeyApp(App):
 
 
             
-            
+            def ClearText(obj):
+                # Clears the text for TeamNameText so user can directly type in a search without deleting the instructions
+                TeamNameText.text = ''
             # Create TextInput and Button Widgets
             
-            # LastNameText = TextInput(text ='Seach Last Name here (delete this text first) ', size_hint = (.25, .1), pos_hint = {'x':.25, 'y': 0})
-            # FirstNameText = TextInput(text ='Seach first Name here (delete this text first)  ', size_hint = (.25, .1), pos_hint = {'x':.25, 'y': .25})
-            TeamNameText = TextInput(text ='Seach here, and then hit a search option above ', size_hint = (.35, .095), pos_hint = {'x':.325, 'y': .5})
+            TeamNameText = TextInput(text ='Search here, and then hit a search option above ', size_hint = (.35, .095), pos_hint = {'x':.325, 'y': .5})
+            TeamNameButton = Button(size_hint = (.35, .095), pos_hint = {'x':.325, 'y': .5})
+            TeamNameButton.bind(on_release = ClearText)
+            
         
             LastNameSearchButton = Button(text ='Search by Last Name', size_hint=(.25, .1), pos_hint = {'x' :.25, 'center_y':.95})
             FirstNameSearchButton = Button(text ='Search by First Name', size_hint=(.25, .1), pos_hint = {'x' :.5, 'center_y':.95})
@@ -447,6 +476,7 @@ class HockeyApp(App):
             # Add Buttons, Images TextInputs to Layout
 #            Layout.add_widget(LastNameText)
 #            Layout.add_widget(FirstNameText)
+            Layout.add_widget(TeamNameButton)
             Layout.add_widget(TeamNameText)
             Layout.add_widget(LastNameSearchButton)
             Layout.add_widget(FirstNameSearchButton)
@@ -497,11 +527,13 @@ def DropDownCreation(data):
 
 
 def Sort(data):
-    # Uses built in python method sorted (time sort algorithm O(nlogn)) to sort a dictionary by keys
-    return sorted(data, key=data.get)
-
+    keys = sorted(data, key=data.get)
+    keys.reverse()
+    return keys
 
 if __name__ == '__main__':
     HockeyApp().run()
+
+
 
 
